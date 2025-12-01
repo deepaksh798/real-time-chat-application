@@ -17,7 +17,6 @@ export const signup = async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-    console.log("we are in sign up: ", user);
 
     if (user) res.status(400).json({ message: "Email already exists" });
 
@@ -34,7 +33,6 @@ export const signup = async (req, res) => {
     if (newUser) {
       generateToken(newUser._id, res);
       await newUser.save();
-      console.log("-------here we are---------");
       return res.status(201).json({
         _id: newUser._id,
         fullName: newUser.fullName,
