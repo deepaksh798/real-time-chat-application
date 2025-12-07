@@ -15,11 +15,36 @@ const MessageInput = () => {
       toast.error("Please select an image file");
       return;
     }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const removeImage = () => {};
+  const removeImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-  const handleSendMessage = async (e: any) => {};
+  const handleSendMessage = async (e: any) => {
+    e.preventDefault();
+    if (!text.trim() && !imagePreview) return;
+
+    try {
+      await sendMessage({
+        text: text.trim(),
+        image: imagePreview,
+      });
+
+      // Clear form
+      setText("");
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
 
   return (
     <div className="p-4 w-full">
