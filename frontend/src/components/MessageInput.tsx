@@ -11,7 +11,9 @@ const MessageInput = () => {
 
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
-    if (!file.type.startWith("image/")) {
+    console.log("file : ", file);
+
+    if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
