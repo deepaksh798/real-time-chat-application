@@ -1,8 +1,7 @@
 import axios from "axios";
 
 export const axiosInstance = axios.create({
-  // baseURL: import.meta.env.VITE_APP_BASE_URL || "http://localhost:5000/api",
-  // here we should have to add /api
+  // baseURL: import.meta.env.VITE_APP_BASE_URL + "/api" || "http://localhost:5000/api",
   baseURL: import.meta.env.VITE_APP_BASE_URL + "/api",
   withCredentials: true,
 });

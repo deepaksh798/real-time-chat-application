@@ -3,6 +3,7 @@ import http from "http";
 import express from "express";
 
 const app = express();
+app.set("trust proxy", 1); //
 const server = http.createServer(app); // here we create an HTTP server, which is needed for Socket.IO
 
 const io = new Server(server, {
