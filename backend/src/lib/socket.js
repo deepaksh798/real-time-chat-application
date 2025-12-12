@@ -44,6 +44,7 @@ const io = new Server(server, {
       "https://real-time-chat-application.deepak-sh798.workers.dev",
       "http://localhost:5173",
     ],
+    credentials: true,
   },
 });
 
