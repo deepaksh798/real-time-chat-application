@@ -88,6 +88,7 @@ export const useAuthStore = create((set: any, get: any) => ({
 
     const socket = io(BASE_URL, {
       query: { userId: authUser._id },
+      withCredentials: true,
     });
     console.log("we are in connectSocket 2");
     socket.connect();
