@@ -2,6 +2,8 @@
 
 A real-time chat application built using the **MERN stack** (MongoDB, Express, React, Node.js) with **Socket.IO** for instant messaging.
 
+![Demo App](/frontend/public/chat-screenshot.png)
+
 ## 🚀 Features
 
 - 🔐 User authentication (JWT-based)
