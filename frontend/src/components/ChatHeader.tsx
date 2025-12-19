@@ -1,10 +1,17 @@
 import { X } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useEffect } from "react";
 
 const ChatHeader = () => {
-  const { selectedUser, setSelectedUser }: any = useChatStore();
+  const { selectedUser, setSelectedUser, typingUser }: any = useChatStore();
   const { onlineUsers }: any = useAuthStore();
+
+  // useEffect(() => {
+
+  // }, [typingUser]);
+
+  const isTyping = typingUser?._id === selectedUser?._id;
 
   return (
     <div className="p-2.5 border-b border-base-300">
@@ -23,9 +30,15 @@ const ChatHeader = () => {
           {/* User info */}
           <div>
             <h3 className="font-medium">{selectedUser?.fullName}</h3>
-            <p className="text-sm text-base-content/70">
-              {onlineUsers?.includes(selectedUser?._id) ? "Online" : "Offline"}
-            </p>
+            {isTyping ? (
+              <p className="text-sm text-base-content/70 italic">Typing...</p>
+            ) : (
+              <p className="text-sm text-base-content/70">
+                {onlineUsers?.includes(selectedUser?._id)
+                  ? "Online"
+                  : "Offline"}
+              </p>
+            )}
           </div>
         </div>
 

@@ -22,8 +22,33 @@ io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
   const userId = socket.handshake.query.userId;
-
   if (userId) userSocketMap[userId] = socket.id;
+
+  // user typing event
+
+  socket.on("typing", (senderId, receiverId) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userTyping", { senderId });
+    }
+  });
+  // socket.on("typing", (data) => {
+  //   const receiverSocketId = getReceiverSocketId(data.receiverId);
+  //   if (receiverSocketId) {
+  //     io.to(receiverSocketId).emit("typingResponse", {
+  //       senderId: data.senderId,
+  //       isTyping: data.isTyping,
+  //     });
+  //   }
+  // });
+
+  // user stop typing event
+  socket.on("stopTyping", (senderId, receiverId) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userStopTyping", { senderId });
+    }
+  });
 
   // io.emit() is used to send events to all the connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));

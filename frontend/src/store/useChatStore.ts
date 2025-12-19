@@ -2,9 +2,11 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
+import { subscribe } from "diagnostics_channel";
 
 export const useChatStore = create((set: any, get: any) => ({
   messages: [],
+  typingUser: null,
   users: [],
   selectedUser: null,
   isUsersLoading: false,
@@ -54,6 +56,24 @@ export const useChatStore = create((set: any, get: any) => ({
         error.response.data.message
       );
     }
+  },
+
+  subscribeToNewTyping: () => {
+    const socket: any = useAuthStore.getState().socket;
+
+    socket.on("userTyping", ({ senderId }: any) => {
+      set({ typingUser: senderId });
+    });
+
+    socket.on("userStopTyping", () => {
+      set({ typingUser: null });
+    });
+  },
+
+  unsubscribeFromTyping: () => {
+    const socket: any = useAuthStore.getState().socket;
+    socket.off("userTyping");
+    socket.off("userStopTyping");
   },
 
   subscribeToNewMessages: () => {

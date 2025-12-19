@@ -17,6 +17,7 @@ const MessageInput = () => {
       toast.error("Please select an image file");
       return;
     }
+    // FileRaeader to convert image to base64
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
