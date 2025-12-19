@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -7,21 +8,21 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<any>(null);
   const fileInputRef = useRef<any>(null);
-  const { sendMessages }: any = useChatStore();
+  const typingTimeoutRef = useRef<any>(null);
+
+  const { sendMessages, selectedUser }: any = useChatStore();
+  const { socket, authUser }: any = useAuthStore();
 
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
-    console.log("file : ", file);
 
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
-    // FileRaeader to convert image to base64
+
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
@@ -30,10 +31,34 @@ const MessageInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // TYPING HANDLER
+  const handleTyping = (value: string) => {
+    setText(value);
+
+    if (!socket || !selectedUser) return;
+
+    // Emit typing
+    socket.emit("typing", {
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+    });
+
+    // Debounce stopTyping
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", {
+        senderId: authUser._id,
+        receiverId: selectedUser._id,
+      });
+    }, 800);
+  };
+
   const handleSendMessage = async (e: any) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
-    console.log("text : ", text);
 
     try {
       await sendMessages({
@@ -41,7 +66,11 @@ const MessageInput = () => {
         image: imagePreview,
       });
 
-      // Clear form
+      socket.emit("stopTyping", {
+        senderId: authUser._id,
+        receiverId: selectedUser._id,
+      });
+
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -62,8 +91,7 @@ const MessageInput = () => {
             />
             <button
               onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300
-              flex items-center justify-center"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300 flex items-center justify-center"
               type="button"
             >
               <X className="size-3" />
@@ -79,8 +107,9 @@ const MessageInput = () => {
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTyping(e.target.value)}
           />
+
           <input
             type="file"
             accept="image/*"
@@ -91,13 +120,15 @@ const MessageInput = () => {
 
           <button
             type="button"
-            className={`hidden sm:flex btn btn-circle
-                     ${imagePreview ? "text-emerald-500" : "text-zinc-400"}`}
+            className={`hidden sm:flex btn btn-circle ${
+              imagePreview ? "text-emerald-500" : "text-zinc-400"
+            }`}
             onClick={() => fileInputRef.current?.click()}
           >
             <Image size={20} />
           </button>
         </div>
+
         <button
           type="submit"
           className="btn btn-sm btn-circle"
