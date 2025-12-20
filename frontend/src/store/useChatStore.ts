@@ -2,7 +2,6 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
-import { subscribe } from "diagnostics_channel";
 
 export const useChatStore = create((set: any, get: any) => ({
   messages: [],
@@ -59,14 +58,19 @@ export const useChatStore = create((set: any, get: any) => ({
   },
 
   subscribeToNewTyping: () => {
+    console.log("we are in subscribeToNewTyping");
     const socket: any = useAuthStore.getState().socket;
 
     socket.on("userTyping", ({ senderId }: any) => {
+      console.log("userTyping event received : ", senderId);
       set({ typingUser: senderId });
     });
 
-    socket.on("userStopTyping", () => {
-      set({ typingUser: null });
+    socket.on("userStopTyping", ({ senderId }: any) => {
+      const { typingUser } = get();
+      if (typingUser === senderId) {
+        set({ typingUser: null });
+      }
     });
   },
 

@@ -7,11 +7,8 @@ const ChatHeader = () => {
   const { selectedUser, setSelectedUser, typingUser }: any = useChatStore();
   const { onlineUsers }: any = useAuthStore();
 
-  // useEffect(() => {
-
-  // }, [typingUser]);
-
-  const isTyping = typingUser?._id === selectedUser?._id;
+  const isTyping = typingUser === selectedUser?._id;
+  // console.log("isTyping", isTyping);
 
   return (
     <div className="p-2.5 border-b border-base-300">
@@ -31,7 +28,9 @@ const ChatHeader = () => {
           <div>
             <h3 className="font-medium">{selectedUser?.fullName}</h3>
             {isTyping ? (
-              <p className="text-sm text-base-content/70 italic">Typing...</p>
+              <p className="text-sm font-medium text-primary animate-pulse">
+                Typing...
+              </p>
             ) : (
               <p className="text-sm text-base-content/70">
                 {onlineUsers?.includes(selectedUser?._id)

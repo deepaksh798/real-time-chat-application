@@ -4,19 +4,50 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
 
+const TYPING_DELAY = 800;
+
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<any>(null);
+
   const fileInputRef = useRef<any>(null);
   const typingTimeoutRef = useRef<any>(null);
+  const isTypingRef = useRef(false);
 
+  const socket = useAuthStore((state: any) => state.socket);
   const { sendMessages, selectedUser }: any = useChatStore();
-  const { socket, authUser }: any = useAuthStore();
 
+  // ---------------- TYPING HANDLER (DEBOUNCED) ----------------
+  const handleTyping = (value: string) => {
+    if (!socket || !selectedUser) return;
+
+    // Emit typing only once
+    if (!isTypingRef.current && value.trim()) {
+      socket.emit("typing", {
+        receiverId: selectedUser._id,
+      });
+      isTypingRef.current = true;
+    }
+
+    // Reset debounce timer
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing after delay
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", {
+        receiverId: selectedUser._id,
+      });
+      isTypingRef.current = false;
+    }, TYPING_DELAY);
+  };
+
+  // ---------------- IMAGE ----------------
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
 
-    if (!file.type.startsWith("image/")) {
+    if (!file?.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
@@ -31,52 +62,25 @@ const MessageInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // TYPING HANDLER
-  const handleTyping = (value: string) => {
-    setText(value);
-
-    if (!socket || !selectedUser) return;
-
-    // Emit typing
-    socket.emit("typing", {
-      senderId: authUser._id,
-      receiverId: selectedUser._id,
-    });
-
-    // Debounce stopTyping
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stopTyping", {
-        senderId: authUser._id,
-        receiverId: selectedUser._id,
-      });
-    }, 800);
-  };
-
+  // ---------------- SEND MESSAGE ----------------
   const handleSendMessage = async (e: any) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
-    try {
-      await sendMessages({
-        text: text.trim(),
-        image: imagePreview,
-      });
+    await sendMessages({
+      text: text.trim(),
+      image: imagePreview,
+    });
 
-      socket.emit("stopTyping", {
-        senderId: authUser._id,
-        receiverId: selectedUser._id,
-      });
+    // Stop typing immediately on send
+    socket?.emit("stopTyping", {
+      receiverId: selectedUser._id,
+    });
+    isTypingRef.current = false;
 
-      setText("");
-      setImagePreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
+    setText("");
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -91,7 +95,8 @@ const MessageInput = () => {
             />
             <button
               onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300 flex items-center justify-center"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300
+              flex items-center justify-center"
               type="button"
             >
               <X className="size-3" />
@@ -107,7 +112,10 @@ const MessageInput = () => {
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => handleTyping(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              handleTyping(e.target.value);
+            }}
           />
 
           <input
@@ -120,9 +128,8 @@ const MessageInput = () => {
 
           <button
             type="button"
-            className={`hidden sm:flex btn btn-circle ${
-              imagePreview ? "text-emerald-500" : "text-zinc-400"
-            }`}
+            className={`hidden sm:flex btn btn-circle
+              ${imagePreview ? "text-emerald-500" : "text-zinc-400"}`}
             onClick={() => fileInputRef.current?.click()}
           >
             <Image size={20} />

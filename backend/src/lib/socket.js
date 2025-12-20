@@ -8,6 +8,8 @@ const server = http.createServer(app); // here we create an HTTP server, which i
 const io = new Server(server, {
   cors: {
     origin: ["http://localhost:5173"],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -26,27 +28,21 @@ io.on("connection", (socket) => {
 
   // user typing event
 
-  socket.on("typing", (senderId, receiverId) => {
+  socket.on("typing", ({ receiverId }) => {
     const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userTyping", { senderId });
+      io.to(receiverSocketId).emit("userTyping", {
+        senderId: userId,
+      });
     }
   });
-  // socket.on("typing", (data) => {
-  //   const receiverSocketId = getReceiverSocketId(data.receiverId);
-  //   if (receiverSocketId) {
-  //     io.to(receiverSocketId).emit("typingResponse", {
-  //       senderId: data.senderId,
-  //       isTyping: data.isTyping,
-  //     });
-  //   }
-  // });
 
-  // user stop typing event
-  socket.on("stopTyping", (senderId, receiverId) => {
+  socket.on("stopTyping", ({ receiverId }) => {
     const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userStopTyping", { senderId });
+      io.to(receiverSocketId).emit("userStopTyping", {
+        senderId: userId,
+      });
     }
   });
 
